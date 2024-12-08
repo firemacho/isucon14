@@ -136,24 +136,35 @@ func chairAuthMiddleware(next http.Handler) http.Handler {
 		}
 		accessToken := c.Value
 
+		chair := &Chair{}
+		err = db.GetContext(ctx, chair, "SELECT * FROM chairs WHERE access_token = ?", accessToken)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				writeError(w, http.StatusUnauthorized, errors.New("invalid access token"))
+				return
+			}
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+
 		// キャッシュから取得
-        var chair *Chair
-        cachedChair, ok := chairCache.Get(accessToken)
-        if ok {
-            chair = cachedChair
-        } else {
-            chair = &Chair{}
-            err := db.GetContext(ctx, chair, "SELECT * FROM chairs WHERE access_token = ?", accessToken)
-            if err != nil {
-                if errors.Is(err, sql.ErrNoRows) {
-                    writeError(w, http.StatusUnauthorized, errors.New("invalid access token"))
-                    return
-                }
-                writeError(w, http.StatusInternalServerError, err)
-                return
-            }
-            chairCache.Set(accessToken, chair)
-        }
+        // var chair *Chair
+        // cachedChair, ok := chairCache.Get(accessToken)
+        // if ok {
+        //     chair = cachedChair
+        // } else {
+        //     chair = &Chair{}
+        //     err := db.GetContext(ctx, chair, "SELECT * FROM chairs WHERE access_token = ?", accessToken)
+        //     if err != nil {
+        //         if errors.Is(err, sql.ErrNoRows) {
+        //             writeError(w, http.StatusUnauthorized, errors.New("invalid access token"))
+        //             return
+        //         }
+        //         writeError(w, http.StatusInternalServerError, err)
+        //         return
+        //     }
+        //     chairCache.Set(accessToken, chair)
+        // }
 
 		ctx = context.WithValue(ctx, "chair", chair)
 		next.ServeHTTP(w, r.WithContext(ctx))
