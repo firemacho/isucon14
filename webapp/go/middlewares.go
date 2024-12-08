@@ -5,7 +5,38 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"sync"
 )
+
+type cacheSliceUser struct {
+	// Setが多いならsync.Mutex
+	sync.RWMutex
+	items map[string]User
+}
+func NewcacheSliceUser() *cacheSliceUser {
+	m := make(map[string]User)
+	c := &cacheSliceUser{
+		items: m,
+	}
+	return c
+}
+func (c *cacheSliceUser) Set(key string, value User) {
+	c.Lock()
+	c.items[key] = value
+	c.Unlock()
+}
+func (c *cacheSliceUser) Get(key string) (User, bool) {
+	c.RLock()
+	v, found := c.items[key]
+	c.RUnlock()
+	return v, found
+}
+func (c *cacheSliceUser) Clear() {
+	c.Lock()
+	c.items = make(map[string]User) // 空のマップに置き換え
+	c.Unlock()
+}
+var userCache = NewcacheSliceUser()
 
 func appAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -16,15 +47,22 @@ func appAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		accessToken := c.Value
-		user := &User{}
-		err = db.GetContext(ctx, user, "SELECT * FROM users WHERE access_token = ?", accessToken)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				writeError(w, http.StatusUnauthorized, errors.New("invalid access token"))
+
+		// キャッシュから取得
+		var user User
+		user, ok := userCache.Get(accessToken)
+		if !ok {
+			err = db.GetContext(ctx, user, "SELECT * FROM users WHERE access_token = ?", accessToken)
+			if err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					writeError(w, http.StatusUnauthorized, errors.New("invalid access token"))
+					return
+				}
+				writeError(w, http.StatusInternalServerError, err)
 				return
+			} else {
+				userCache.Set(accessToken, user)
 			}
-			writeError(w, http.StatusInternalServerError, err)
-			return
 		}
 
 		ctx = context.WithValue(ctx, "user", user)
