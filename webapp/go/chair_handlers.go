@@ -111,6 +111,21 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 
+	// 1つ前のchair_locationを取得
+	previousLocation := &ChairLocation{}
+	var initialFlag bool
+	err = tx.GetContext(ctx, previousLocation, `SELECT * FROM chair_locations WHERE chair_id = ? ORDER BY created_at DESC LIMIT 1`, chair.ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// 初期状態flagを立てる
+			initialFlag = true
+		} else {
+			// その他のエラーの場合はエラーとして処理
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
 	chairLocationID := ulid.Make().String()
 	if _, err := tx.ExecContext(
 		ctx,
@@ -125,6 +140,22 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 	if err := tx.GetContext(ctx, location, `SELECT * FROM chair_locations WHERE id = ?`, chairLocationID); err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
+	}
+
+	// chairのtotal_distanceとtotal_distance_updated_atを更新
+	if initialFlag {
+		// 初回の場合はtotal_distance_updated_atのみ更新
+		if _, err := tx.ExecContext(ctx, `UPDATE chairs SET total_distance_updated_at = ? WHERE id = ?`, location.CreatedAt, chair.ID); err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+	} else {
+		// 1つ前のchair_locationとの距離を計算し、total_distanceを更新
+		distance := abs(previousLocation.Latitude-req.Latitude) + abs(previousLocation.Longitude-req.Longitude)
+		if _, err := tx.ExecContext(ctx, `UPDATE chairs SET total_distance = total_distance + ?, total_distance_updated_at = ? WHERE id = ?`, distance, location.CreatedAt, chair.ID); err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
 	}
 
 	ride := &Ride{}
