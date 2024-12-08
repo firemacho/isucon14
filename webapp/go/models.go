@@ -14,6 +14,8 @@ type Chair struct {
 	AccessToken string    `db:"access_token"`
 	CreatedAt   time.Time `db:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at"`
+	TotalDistance          int          `db:"total_distance"`
+	TotalDistanceUpdatedAt sql.NullTime `db:"total_distance_updated_at"`
 }
 
 type ChairModel struct {
