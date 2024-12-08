@@ -10,12 +10,12 @@ declare -A SERVER_SERVICES=(
 
 # 各サーバにSSHで接続する際のホスト名
 declare -A SERVER_HOSTS=(
-  ["s1"]="server1"
-  ["s2"]="server2"
-  ["s3"]="server3"
+  ["s1"]="s1"
+  ["s2"]="s2"
+  ["s3"]="s3"
 )
 # SSHのユーザ
 ssh_user=isucon
 
 # GitHubリポジトリのSSHのURL
-GITHUB_URL=""
+GITHUB_URL="git@github.com:firemacho/isucon14.git"
