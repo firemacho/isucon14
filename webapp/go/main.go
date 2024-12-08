@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"log"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/exec"
 	"strconv"
@@ -20,6 +22,9 @@ import (
 var db *sqlx.DB
 
 func main() {
+	go func() {
+        log.Fatal(http.ListenAndServe(":6060", nil))
+    }()
 	mux := setup()
 	slog.Info("Listening on :8080")
 	http.ListenAndServe(":8080", mux)
