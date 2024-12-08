@@ -142,3 +142,5 @@ CREATE INDEX ride_statuses_idx_ride_id_app_sent_at ON ride_statuses (ride_id, ap
 CREATE INDEX rides_idx_chair_id ON rides (chair_id);
 CREATE INDEX chairs_idx_access_token ON chairs (access_token);
 CREATE INDEX idx_chairs_owner_id ON chairs(owner_id);
+CREATE INDEX rides_idx_user_id ON rides (user_id);
+CREATE INDEX coupons_idx_used_by ON coupons (used_by);
