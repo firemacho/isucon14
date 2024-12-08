@@ -5,6 +5,26 @@ query_string: true              # boolean
 output: count,5xx,method,uri,min,max,sum,avg,p99                    # string(comma separated)
 
 matching_groups:            # array
+  - /api/initialize
+  - /api/app/users
+  - /api/app/payment-methods
+  - /api/app/rides/estimated-fare
+  - /api/app/rides/[a-zA-Z0-9-]+/evaluation
+  - /api/app/rides
+  - /api/app/notification
+  - /api/app/nearby-chairs
+  - /api/owner/owners
+  - /api/owner/sales
+  - /api/owner/chairs
+  - /api/chair/chairs
+  - /api/chair/activity
+  - /api/chair/coordinate
+  - /api/chair/notification
+  - /api/chair/rides/[a-zA-Z0-9-]+/status
+  - /api/internal/matching
+  - /assets/
+  - /images/
+  
 # 上から順番に評価され、パス前半の一部でも合致したらグループになってしまうので注意 → 終わりにちゃんと$をつける
 #  - /image/[0-9]+\.(jpg|png|gif)$ #例1
 #  - /api/isu/[a-f0-9-]+/icon$ #例2:$をつけなかった場合、例3より上に書かないと評価されない
