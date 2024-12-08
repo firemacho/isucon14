@@ -5,10 +5,10 @@ ENV_FILE:=env.sh # DB接続情報が記されているファイル
 include $(ENV_FILE) # DB接続情報およびSERVER_ID(セットアップ時に追記)の読み込み
 
 USER:=isucon
-BIN_NAME:=isucondition # ビルドにより作成する実行ファイル名
+BIN_NAME:=isuride # ビルドにより作成する実行ファイル名
 BUILD_DIR:=/home/isucon/webapp/go # go buildを実行するディレクトリ
-SERVICE_NAME:=isucondition.go.service
-GO_PATH:=/home/isucon/local/go/bin/go #which goの結果
+SERVICE_NAME:=isuride-go.service 
+GO_PATH:=/home/isucon/local/golang/bin/go #which goの結果
 
 DB_PATH:=/etc/mysql
 NGINX_PATH:=/etc/nginx
@@ -37,7 +37,7 @@ apply: check-server-id mv-logs build deploy-conf restart
 # DBに接続する
 .PHONY: access-db
 access-db:
-	mysql -h $(MYSQL_HOST) -P $(MYSQL_PORT) -u $(MYSQL_USER) -p$(MYSQL_PASS) $(MYSQL_DBNAME)
+	mysql -h $(ISUCON_DB_HOST) -P $(ISUCON_DB_PORT) -u $(ISUCON_DB_USER) -p$(ISUCON_DB_PASSWORD) $(ISUCON_DB_NAME)
 
 # slow queryを確認する
 .PHONY: slow-query
