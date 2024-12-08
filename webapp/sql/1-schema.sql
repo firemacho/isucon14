@@ -142,4 +142,5 @@ CREATE TABLE coupons
   CREATE INDEX rides_idx_chair_id ON rides (chair_id);
   CREATE INDEX chairs_idx_access_token ON chairs (access_token);
   CREATE INDEX idx_chairs_owner_id ON chairs(owner_id);
-
+  CREATE INDEX rides_idx_user_id ON rides (user_id);
+  CREATE INDEX coupons_idx_used_by ON coupons (used_by);
