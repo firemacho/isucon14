@@ -4,13 +4,8 @@ import (
 	crand "crypto/rand"
 	"encoding/json"
 	"fmt"
-<<<<<<< HEAD
-	"log"
-	"log/slog"
-=======
 	"log/slog"
 	//"log"
->>>>>>> origin/main
 	"net"
 	"net/http"
 	// _ "net/http/pprof"
@@ -27,15 +22,9 @@ import (
 var db *sqlx.DB
 
 func main() {
-<<<<<<< HEAD
-	go func() {
-		log.Fatal(http.ListenAndServe(":6060", nil))
-	}()
-=======
 	// go func() {
     //     log.Fatal(http.ListenAndServe(":6060", nil))
     // }()
->>>>>>> origin/main
 	mux := setup()
 	slog.Info("Listening on :8080")
 	http.ListenAndServe(":8080", mux)
@@ -81,9 +70,6 @@ func setup() http.Handler {
 		panic(err)
 	}
 	db = _db
-
-	db.SetMaxOpenConns(100) // Set the maximum number of open connections to 100
-	db.SetMaxIdleConns(100) // Set the maximum number of idle connections
 
 	mux := chi.NewRouter()
 	// mux.Use(middleware.Logger)
