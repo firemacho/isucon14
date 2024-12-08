@@ -38,6 +38,36 @@ func (c *cacheSliceUser) Clear() {
 }
 var userCache = NewcacheSliceUser()
 
+type cacheSliceChair struct {
+	// Setが多いならsync.Mutex
+	sync.RWMutex
+	items map[string]*Chair
+}
+func NewcacheSliceChair() *cacheSliceChair {
+	m := make(map[string]*Chair)
+	c := &cacheSliceChair{
+		items: m,
+	}
+	return c
+}
+func (c *cacheSliceChair) Set(key string, value *Chair) {
+	c.Lock()
+	c.items[key] = value
+	c.Unlock()
+}
+func (c *cacheSliceChair) Get(key string) (*Chair, bool) {
+	c.RLock()
+	v, found := c.items[key]
+	c.RUnlock()
+	return v, found
+}
+func (c *cacheSliceChair) Clear() {
+	c.Lock()
+	c.items = make(map[string]*Chair) // 空のマップに置き換え
+	c.Unlock()
+}
+var chairCache = NewcacheSliceChair()
+
 func appAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -105,16 +135,25 @@ func chairAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		accessToken := c.Value
-		chair := &Chair{}
-		err = db.GetContext(ctx, chair, "SELECT * FROM chairs WHERE access_token = ?", accessToken)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				writeError(w, http.StatusUnauthorized, errors.New("invalid access token"))
-				return
-			}
-			writeError(w, http.StatusInternalServerError, err)
-			return
-		}
+
+		// キャッシュから取得
+        var chair *Chair
+        cachedChair, ok := chairCache.Get(accessToken)
+        if ok {
+            chair = cachedChair
+        } else {
+            chair = &Chair{}
+            err := db.GetContext(ctx, chair, "SELECT * FROM chairs WHERE access_token = ?", accessToken)
+            if err != nil {
+                if errors.Is(err, sql.ErrNoRows) {
+                    writeError(w, http.StatusUnauthorized, errors.New("invalid access token"))
+                    return
+                }
+                writeError(w, http.StatusInternalServerError, err)
+                return
+            }
+            chairCache.Set(accessToken, chair)
+        }
 
 		ctx = context.WithValue(ctx, "chair", chair)
 		next.ServeHTTP(w, r.WithContext(ctx))
